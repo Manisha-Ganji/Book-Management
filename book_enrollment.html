@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Book Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            text-align: center;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .result.success {
+            background-color: #e0ffe0;
+            color: #2d6a2c;
+        }
+        .result.error {
+            background-color: #ffe0e0;
+            color: #a52a2a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Add a New Book</h2>
+    <form id="add-book-form">
+        <label for="book-title">Title</label>
+        <input type="text" id="book-title" name="title" required>
+
+        <label for="book-author">Author</label>
+        <input type="text" id="book-author" name="author" required>
+
+        <label for="book-genre">Genre</label>
+        <input type="text" id="book-genre" name="genre" required>
+
+        <label for="book-available">Available</label>
+        <select id="book-available" name="available" required>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+
+        <button type="submit">Add Book</button>
+    </form>
+
+    <div class="error" id="add-book-error-message"></div>
+</div>
+
+<div class="container">
+    <h2>Get Book Details</h2>
+    <form id="get-book-form">
+        <label for="book-id">Book ID</label>
+        <input type="number" id="book-id" name="book_id" required>
+
+        <button type="submit">Get Book Details</button>
+    </form>
+
+    <div id="book-details" class="result"></div>
+    <div class="error" id="book-error-message"></div>
+</div>
+
+<div class="container">
+    <h2>Search Books</h2>
+    <form id="search-book-form">
+        <label for="search-query">Search by Title or Author</label>
+        <input type="text" id="search-query" name="query" required>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <div id="search-results" class="result"></div>
+    <div class="error" id="search-error-message"></div>
+</div>
+
+<script>
+    // Add a new book
+    document.getElementById("add-book-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const title = document.getElementById("book-title").value;
+        const author = document.getElementById("book-author").value;
+        const genre = document.getElementById("book-genre").value;
+        const available = document.getElementById("book-available").value === "true";
+
+        try {
+            const response = await fetch("http://localhost:8002/books/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ title, author, genre, available })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert("Book added successfully!");
+            } else {
+                throw new Error(result.detail || "Failed to add book.");
+            }
+        } catch (error) {
+            document.getElementById("add-book-error-message").innerText = error.message;
+        }
+    });
+
+    // Get book details by ID
+    document.getElementById("get-book-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const bookId = document.getElementById("book-id").value;
+
+        try {
+            const response = await fetch(`http://localhost:8002/books/${bookId}`);
+
+            if (!response.ok) {
+                throw new Error("Book not found.");
+            }
+
+            const book = await response.json();
+            document.getElementById("book-details").innerHTML = `
+                <strong>Title:</strong> ${book.title}<br>
+                <strong>Author:</strong> ${book.author}<br>
+                <strong>Genre:</strong> ${book.genre}<br>
+                <strong>Available:</strong> ${book.available ? "Yes" : "No"}
+            `;
+            document.getElementById("book-details").classList.add("success");
+            document.getElementById("book-details").classList.remove("error");
+        } catch (error) {
+            document.getElementById("book-error-message").innerText = error.message;
+            document.getElementById("book-details").classList.add("error");
+            document.getElementById("book-details").classList.remove("success");
+        }
+    });
+
+    // Search for books
+    document.getElementById("search-book-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const query = document.getElementById("search-query").value;
+
+        try {
+            const response = await fetch(`http://localhost:8002/books/search/?query=${query}`);
+
+            if (!response.ok) {
+                throw new Error("No books found.");
+            }
+
+            const books = await response.json();
+            if (books.length === 0) {
+                throw new Error("No books found.");
+            }
+
+            const resultsDiv = document.getElementById("search-results");
+            resultsDiv.innerHTML = "";
+            books.forEach(book => {
+                const bookDiv = document.createElement("div");
+                bookDiv.classList.add("result");
+                bookDiv.innerHTML = `
+                    <strong>Title:</strong> ${book.title}<br>
+                    <strong>Author:</strong> ${book.author}<br>
+                    <strong>Genre:</strong> ${book.genre}<br>
+                    <strong>Available:</strong> ${book.available ? "Yes" : "No"}
+                `;
+                resultsDiv.appendChild(bookDiv);
+            });
+            document.getElementById("search-results").classList.add("success");
+            document.getElementById("search-results").classList.remove("error");
+        } catch (error) {
+            document.getElementById("search-error-message").innerText = error.message;
+            document.getElementById("search-results").classList.add("error");
+            document.getElementById("search-results").classList.remove("success");
+        }
+    });
+</script>
+
+</body>
+</html>

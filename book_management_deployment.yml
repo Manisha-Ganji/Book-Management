@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-management
+  template:
+    metadata:
+      labels:
+        app: book-management
+    spec:
+      containers:
+      - name: book-management
+        image: sanman2020/book-management-image:latest  # Replace with your actual image
+        ports:
+        - containerPort: 8002
+        volumeMounts:
+        - name: sqlite-data
+          mountPath: /app/sqlite-data  # Mount a persistent volume for SQLite database
+      volumes:
+      - name: sqlite-data
+        persistentVolumeClaim:
+          claimName: sqlite-pvc

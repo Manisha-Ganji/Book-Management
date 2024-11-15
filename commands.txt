@@ -1,0 +1,28 @@
+uvicorn book_management:app --host 0.0.0.0 --port 8002 --reload
+http://localhost:8002/docs
+
+
+docker buildx build -t book-management-image .
+docker run -d -p 8002:8002  book-management-image
+docker tag book-management-image:latest sanman2020/book-management-image:latest
+docker push sanman2020/book-management-image:latest
+
+
+minikube version
+minikube start --driver=docker
+minikube status
+kubectl cluster-info (Verify Minikube is running by checking the Kubernetes status:)
+
+
+kubectl apply -f book_management_deployment.yml
+kubectl apply -f book_management_service.yml
+kubectl apply -f book_sqlite_pvc.yml
+
+
+kubectl get pods
+kubectl get deployments
+
+
+kubectl get services
+minikube ip
+minikube dashboard
